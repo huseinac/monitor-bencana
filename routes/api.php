@@ -31,7 +31,7 @@ Route::middleware('io_auth_api')->name('api.')->group(function () {
 Route::prefix('excel')
     ->middleware('excel_auth_api')
     ->group(function () {
-        Route::get('/wilayah/{scope}', [App\Http\Controllers\PaketPekerjaanController::class, 'listWilayahProvExcel'])->name('listWilayahProvExcel');
+        Route::get('/wilayah/{scope}', [App\Http\Controllers\PaketPekerjaanController::class, 'listWilayahExcel'])->name('listWilayahProvExcel');
         Route::get('/wilayah/{scope}/{children}', [App\Http\Controllers\PaketPekerjaanController::class, 'listWilayahExcel'])->name('listWilayahExcel');
         Route::get('/indikator', [App\Http\Controllers\PaketPekerjaanController::class, 'listIndikatorExcel'])->name('listIndikatorExcel');
         Route::get('/pelaksana', [App\Http\Controllers\PaketPekerjaanController::class, 'listPelaksanaExcel'])->name('listPelaksanaExcel');
