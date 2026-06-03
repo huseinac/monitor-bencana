@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         require_once app_path('Helpers/IoHelper.php');
         if (config('app.env') === 'development' || config('app.env') === 'staging') {
             URL::forceScheme('https');
+            set_time_limit(120);
         }
     }
 }
