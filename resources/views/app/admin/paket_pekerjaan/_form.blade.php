@@ -26,12 +26,23 @@
                 <x-io-textarea name="keterangan" caption="Keterangan" :value="$paket_pekerjaan->keterangan ?? ''" :viewtype="2" />
             </div>
             <div class="col-lg-4">
-                <x-io-input name="tahun_anggaran" caption="Tahun Anggaran" :value="$paket_pekerjaan->tahun_anggaran ?? ''" :viewtype="2" />
+                <div class="row">
+                    <div class="col-lg-6">
+                        <x-io-input required oninput="this.value = this.value.replace(/[^0-8]/g, '')" name="tahun_perencanaan" caption="Tahun Perencanaan" :value="$paket_pekerjaan->tahun_perencanaan ?? ''" :viewtype="2" />
+                    </div>
+                    <div class="col-lg-6">
+                        <x-io-input required oninput="this.value = this.value.replace(/[^0-8]/g, '')" name="tahun_usulan" caption="Tahun Usulan" :value="$paket_pekerjaan->tahun_usulan ?? ''" :viewtype="2" />
+                    </div>
+                </div>
+                <x-io-input required oninput="this.value = this.value.replace(/[^0-8]/g, '')" name="tahun_anggaran" caption="Tahun Anggaran" :value="$paket_pekerjaan->tahun_anggaran ?? ''" :viewtype="2" />
+                <x-io-input required oninput="this.value = this.value.replace(/[^0-8]/g, '')" name="tahun_pelaksanaan_pekerjaan" caption="Tahun Pelaksanaan Pekerjaan" :value="$paket_pekerjaan->tahun_pelaksanaan_pekerjaan ?? ''" :viewtype="2" />
                 <x-io-input name="nama_program" caption="Nama Program" :value="$paket_pekerjaan->nama_program ?? ''" :viewtype="2" />
                 <x-io-input name="nama_kegiatan" caption="Nama Kegiatan" :value="$paket_pekerjaan->nama_kegiatan ?? ''" :viewtype="2" />
                 <x-io-input name="nama_sub_kegiatan" caption="Nama Sub Kegiatan" :value="$paket_pekerjaan->nama_sub_kegiatan ?? ''" :viewtype="2" />
                 <x-io-input name="nama_rekening" caption="Nama Rekening" :value="$paket_pekerjaan->nama_rekening ?? ''" :viewtype="2" />
                 <x-io-input type="number" name="pagu_dana" caption="Pagu Dana" :value="$paket_pekerjaan->pagu_dana ?? ''" :viewtype="2" />
+                <x-io-select required name="status_anggaran_id" caption="Status Anggaran" :options="$list_status_anggaran" placeholder="-Pilih status anggaran-" :value="$paket_pekerjaan->status_anggaran_id ?? ''" :viewtype="2" />
+                <x-io-select required name="status_pelaksanaan_id" caption="Status Pelaksanaan" :options="$list_status_pelaksanaan" placeholder="-Pilih status pelaksanaan-" :value="$paket_pekerjaan->status_pelaksanaan_id ?? ''" :viewtype="2" />
             </div>
             <div class="col-lg-4">
                 <x-io-select name="penyedia_id" caption="Penyedia" :options="$list_penyedia" placeholder="-Kosong-" :value="$paket_pekerjaan->penyedia_id ?? ''" :viewtype="2" />

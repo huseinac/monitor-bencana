@@ -5,6 +5,7 @@
             <th style="width:44px">#</th>
             <th>Provinsi</th>
             <th>Kabupaten</th>
+            <th>Nama realisasi</th>
             <th>Peruntukan</th>
             <th>Nominal</th>
             <th style="width:80px; text-align:center">Aksi</th>
@@ -20,9 +21,11 @@
                 <td>{{ $no++ }}</td>
                 <td style="line-height: 1.2;white-space: nowrap;"><span>{{ $item->anggaran_daerah->wilayah->parent->nama }}</span></td>
                 <td style="line-height: 1.2;white-space: nowrap;"><span>{{ $item->anggaran_daerah->wilayah->nama }}</span></td>
+                <td>{{ $item->nama_realisasi }}</td>
                 <td>{{ $item->keterangan }}</td>
                 <td style="white-space: nowrap;">{{ format_number($item->nominal) }}</td>
                 <td style="text-align:center;white-space: nowrap;padding: 0;">
+                    <button class="btn-act edit me-1" onclick="detail()" title="Detail"><i class="bi bi-list-task"></i></button>
                     <button class="btn-act edit me-1" onclick="info({{ $item->id }})" title="Edit"><i class="bi bi-pencil-fill"></i></button>
                     <button class="btn-act del" onclick="confirm_delete({{ $item->id }})" title="Hapus"><i class="bi bi-trash3-fill"></i></button>
                 </td>

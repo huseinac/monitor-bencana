@@ -12,7 +12,7 @@
             <p>Kelola data sektor terdampak bencana alam</p>
         </div>
         <div>
-            <button class="btn-primary-custom" onclick="importExcel()" type="button">
+            <button class="btn-primary-custom" type="button" data-bs-toggle="modal" data-bs-target="#modal_import">
                 <i class="bi bi-file-arrow-down-fill"></i> Import Data Paket Pekerjaan
             </button>
             <button class="btn-primary-custom" onclick="info()" type="button">
@@ -22,16 +22,71 @@
     </div>
 
     <div class="panel">
-        <div class="panel-header">
-            <h5><i class="bi bi-table"></i> Data Paket Pekerjaan</h5>
-            <form class="d-flex align-items-center gap-2" id="form_search">
-                @csrf
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <x-input name="nama" class="form-control-sm" caption="Cari nama" />
+        <div class="panel-header d-flex flex-column justify-content-start align-items-start">
+            <div class="row">
+                <h5><i class="bi bi-table"></i> Data Paket Pekerjaan</h5>
+            </div>
+            <div class="row w-100">
+                <div class="col-12">
+                    <form class="d-flex align-items-center gap-2 p-3" id="form_search">
+                        @csrf
+                        <div class="panel w-100">
+                            <div class="panel-header position-relative" 
+                                 data-bs-toggle="collapse" 
+                                 data-bs-target="#searchPanelBody" 
+                                 style="cursor: pointer; padding-right: 2.5rem;" 
+                                 role="button">
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5><i class="bi bi-search"></i> Pencarian data</h5>
+                                    </div>
+                                </div>
+
+                                <i class="bi bi-chevron-down text-muted position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                            </div>
+                            
+                            <div class="panel-body row collapse hide" id="searchPanelBody">
+                                <div class="col-lg-6 mb-2">
+                                    <div class="search-box">
+                                        <i class="bi bi-search"></i>
+                                        <x-input name="nama" class="form-control-sm w-100" caption="Cari nama" onchange="search_data()" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-2">
+                                    <div>
+                                        <x-input name="tahun_anggaran" class="form-control-sm" caption="Cari tahun" onchange="search_data()" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-2">
+                                    <div>
+                                        <x-select name="provinsi_id" prefix="search_" class="form-select form-select-sm" :options="$list_provinsi_options" caption="Cari Provinsi" data-control="select2" onchange="search_data()" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-2">
+                                    <div>
+                                        <x-select name="kabupaten_id" prefix="search_" class="form-select form-select-sm" :options="$list_kabupaten_options" caption="Cari Kabupaten" data-control="select2" onchange="search_data()" />
+                                    </div>
+                                </div>
+                                <x-io-select name="pelaksana_id" caption="Pelaksana" :options="$list_pelaksana" placeholder="-Pilih pelaksana-" :viewtype="2" onchange="search_data()" />
+                                <x-io-select name="status_anggaran_id" caption="Status Anggaran" :options="$list_status_anggaran" placeholder="-Pilih status anggaran-" :viewtype="2" onchange="search_data()" />
+                                <x-io-select name="status_pelaksanaan_id" caption="Status Pelaksanaan" :options="$list_status_pelaksanaan" placeholder="-Pilih status pelaksanaan-" :viewtype="2" onchange="search_data()" />
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
+
+        @php($error = session('error', []))
+        @if(count($error) > 0)
+            <div class="p-3">
+                <h5>List Error</h5>
+                @foreach($error as $item)
+                    <p style="font-size: 10px;border-bottom: 1px solid #000;">Penyebab : {{ $item['penyebab'] }} <br> Baris : {{ json_encode($item['baris']) }}</p>
+                @endforeach
+            </div>
+        @endif
 
         <div id="table"></div>
     </div>
@@ -47,79 +102,28 @@
 @endpush
 
 @push('modals')
-    <div class="modal fade" id="modal_impor_excel" tabindex="-1">
+    <div class="modal fade" id="modal_import" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modal_import_content">
-                <form id="formImport">
+            <div class="modal-content">
+                <form action="{{ route('paket_pekerjaan.import_data') }}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalTitle"><i class="bi bi-file-arrow-down-fill"></i> Import data paket pekerjaan</h5>
+                        <h5 class="modal-title" id="modalTitle"><i class="bi bi-person-plus-fill me-2"></i>Import Data</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <div class="row mb-3">
-                                    <div class="col-8">
-                                        <label for="aaWqadw" class="block text-sm font-medium text-gray-700 required">Pilih file</label><br>
-                                    </div>
-                                    <div class="col-4 d-flex justify-content-end">
-                                        <a href="{{ asset('assets/impordata.xlsm') }}" download class="btn btn-sm btn-success">
-                                            <i class="bi bi-cloud-arrow-down"></i> Unduh template
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="form-control">
-                                    <input type="file" name="aaWqadw" id="aaWqadw" accept=".xlsm" />
-                                </div>
-                            </div>
-                        </div>
+                        <x-io-select name="provinsi_id" prefix="import_" :options="$list_provinsi_options" caption="Cari Provinsi" data-control="select2" />
+                        <x-io-input type="file" name="file_excel" caption="File Excel" />
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">
                             <i class="bi bi-x-lg"></i> Batal
                         </button>
-                        <button type="button" class="btn-primary-custom" onclick="importExcelProcess()">
-                            <i class="bi bi-check-lg"></i> Simpan
+                        <button type="submit" class="btn-primary-custom">
+                            <i class="bi bi-check-lg"></i> Upload
                         </button>
                     </div>
                 </form>
-
-                <script>
-                    init_form_element();
-                    init_form({{ $paket_pekerjaan->id ?? '' }});
-
-                    $provinsi_id = $('#provinsi_id');
-                    $provinsi_id.html('<option value="">-Pilih Provinsi-</option>');
-                    $.each(list_provinsi, (i, val) => {
-                        let selected_kode = '{{ $paket_pekerjaan->wilayah->parent->parent_kode ?? '' }}';
-                        console.log(selected_kode);
-                        $provinsi_id.append('<option value="'+ val.kode +'" ' + (val.kode === selected_kode ? 'selected' : '') + '>'+ val.nama +'</option>');
-                    });
-
-                    $kabupaten_id = $('#kabupaten_id');
-                    $provinsi_id.change(() => {
-                        $kabupaten_id.html('<option value="">-Pilih Kabupaten-</option>');
-                        let parent_kode = $provinsi_id.find('option:selected').val();
-
-                        let selected_kode = '{{ $paket_pekerjaan->wilayah->parent_kode ?? '' }}';
-                        $.each(list_kabupaten.filter(item => item.parent_kode.toString() === parent_kode.toString()), (i, val) => {
-                            $kabupaten_id.append('<option value="'+ val.kode +'" ' + (val.kode === selected_kode ? 'selected' : '') + '>'+ val.nama +'</option>');
-                        });
-                    })
-                    $provinsi_id.change();
-
-                    $kecamatan_id = $('#wilayah_id');
-                    $kabupaten_id.change(() => {
-                        $kecamatan_id.html('<option value="">-Pilih Kecamatan-</option>');
-                        let parent_kode = $kabupaten_id.find('option:selected').val();
-                        let selected_id = '{{ $paket_pekerjaan->wilayah_id ?? '' }}';
-                        $.each(list_kecamatan.filter(item => item.parent_kode.toString() === parent_kode.toString()), (i, val) => {
-                            $kecamatan_id.append('<option value="'+ val.id +'" ' + (val.id.toString() === selected_id ? 'selected' : '') + '>'+ val.nama +'</option>');
-                        });
-                    });
-                    $kabupaten_id.change();
-                </script>
             </div>
         </div>
     </div>
@@ -149,7 +153,9 @@
         }
 
         let search_data = (page = 1) => {
+            showLoadingToast('Loading...', 'success');
             let data = get_form_data($form_search);
+            console.log(data);
             data.paginate = 10;
             data.page = selected_page = get_selected_page(page, selected_page);
             $.post(base_url + '/search?' + params_url, data, (result) => $table.html(result)).fail((xhr) => $table.html(xhr.responseText));
@@ -171,10 +177,10 @@
 
         let importExcelProcess = () => {
             var file = $('#aaWqadw').prop('files')[0];
-                    
+
             if (!file) {
                 alert('Mohon memilih file terlebih dahulu');
-                return false;  
+                return false;
             }
 
             const validExtensions = ['xlsm'];

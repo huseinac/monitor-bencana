@@ -15,6 +15,9 @@
             <button class="btn-primary-custom" type="button" onclick="export_data()">
                 <i class="bi bi-upload"></i> Export Excel
             </button>
+            <button class="btn-primary-custom" type="button" data-bs-toggle="modal" data-bs-target="#modal_import_latlng">
+                <i class="bi bi-upload"></i> Import Latitude Longitude
+            </button>
             <button class="btn-primary-custom" type="button" data-bs-toggle="modal" data-bs-target="#modal_import">
                 <i class="bi bi-upload"></i> Import ZIP
             </button>
@@ -32,6 +35,9 @@
                 <div class="search-box">
                     <i class="bi bi-search"></i>
                     <x-input name="nama_lokasi" class="form-control-sm" caption="Cari nama" />
+                </div>
+                <div style="width: 300px;">
+                    <x-select name="kondisi" prefix="search_" class="form-select form-select-sm" :options="$list_kondisi" caption="Cari Kondisi" onchange="search_data()" />
                 </div>
                 <div style="width: 300px;">
                     <x-select name="indikator_id" prefix="search_" class="form-select form-select-sm" :options="$list_indikator" caption="Cari Indikator" onchange="search_data()" />
@@ -79,6 +85,32 @@
                     <div class="modal-body">
                         <x-io-select name="kabupaten_id" :options="$list_kabupaten_options" caption="Cari Kabupaten" />
                         <x-io-input type="file" name="file_zip" caption="File ZIP" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg"></i> Batal
+                        </button>
+                        <button type="submit" class="btn-primary-custom">
+                            <i class="bi bi-check-lg"></i> Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal_import_latlng" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('sektor_terdampak.import_latlng') }}" method="post" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle"><i class="bi bi-person-plus-fill me-2"></i>Import Data Update Latitude Longitude</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <x-io-select name="kabupaten_id" prefix="latlng_" :options="$list_kabupaten_options" caption="Cari Kabupaten" />
+                        <x-io-input type="file" name="file_excel" caption="File ZIP" />
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">

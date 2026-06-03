@@ -66,6 +66,13 @@ class HomeController extends Controller
         });
     }
 
+    public function get_wilayah_all(Request $request)
+    {
+        $wilayahService = new WilayahService();
+        $list_provinsi = $wilayahService->search();
+        return $list_provinsi->toJson();
+    }
+
     private function get_warna($persentase) {
         if ($persentase <= 30) return "#F9A825";
         if ($persentase <= 70) return "#0D47A1";
@@ -203,16 +210,66 @@ class HomeController extends Controller
 
     public function get_anggaran(Request $request)
     {
+
         $kode_wilayah = $request->input('wilayah_kode') ?? '';
         $cache_key = 'anggaran_' . ($kode_wilayah === '' ? 'root' : $kode_wilayah);
+        $jsonResponse = collect();
 
-        return Cache::remember($cache_key, now()->addDays(3), function () use ($kode_wilayah) {
-            $list_anggaran = AnggaranDaerah::whereHas('wilayah', fn($wilayah) => $wilayah->where('kode', 'like', $kode_wilayah . '%'))
+        // return Cache::remember($cache_key, now()->addDays(3), function () use ($kode_wilayah) {
+        //     $list_anggaran = AnggaranDaerah::whereHas('wilayah', fn($wilayah) => $wilayah->where('kode', 'like', $kode_wilayah . '%'))
+        //         ->with(['list_alokasi', 'wilayah.parent.parent'])
+        //         ->get();
+        //     dd($list_anggaran->toRawSql());exit;
+
+        //     return response()->json($list_anggaran);
+        // });
+
+        if (empty($kode_wilayah)) {
+            // code...
+            $y = AnggaranDaerah::whereHas(
+                    'wilayah', fn($wilayah) => $wilayah->whereNull('parent_kode')
+                )
                 ->with(['list_alokasi', 'wilayah.parent.parent'])
-                ->get();
+                ->get()
+            ;
+            foreach ($y as $x) {
+                // code...
+                $list_anggaran_provinsi = AnggaranDaerah::select('*')
+                    ->selectRaw("1 as is_provinsi")
+                    ->where(
+                        'wilayah_id', $x->wilayah_id
+                    )
+                    ->with(['list_alokasi', 'wilayah.parent.parent'])
+                    ->get()
+                ;
+                $jsonResponse = $jsonResponse->concat($list_anggaran_provinsi);
 
-            return response()->json($list_anggaran);
-        });
+                $list_anggaran = AnggaranDaerah::select('*')
+                    ->selectRaw("0 as is_provinsi")
+                    ->whereHas(
+                        'wilayah', fn($wilayah) => $wilayah->where('parent_kode', '=', function ($qry) use($x) {
+                            // code...
+                            return $qry->select("kode")->from('wilayah')->where('id', $x->wilayah_id);
+                        })
+                    )
+                    ->with(['list_alokasi', 'wilayah.parent.parent'])
+                    ->get()
+                ;
+
+                $jsonResponse = $jsonResponse->concat($list_anggaran);
+            }
+        } else {
+            $y = AnggaranDaerah::whereHas(
+                    'wilayah', fn($wilayah) => $wilayah->where('kode', 'like', $kode_wilayah . '%')
+                )
+                ->with(['list_alokasi', 'wilayah.parent.parent'])
+                ->get()
+            ;
+            $jsonResponse = $jsonResponse->concat($y);
+        }
+
+
+        return response()->json($jsonResponse);
     }
 
     public function detail_pekerjaan($id)

@@ -21,8 +21,8 @@
         @foreach($anggaran_daerahs as $item)
             <tr>
                 <td>{{ $no++ }}</td>
-                <td style="line-height: 1.2;white-space: nowrap;"><span>{{ $item->wilayah->parent->nama ?? '' }}</span></td>
-                <td style="line-height: 1.2;white-space: nowrap;"><span>{{ $item->wilayah->nama }}</span></td>
+                <td style="line-height: 1.2;white-space: nowrap;"><span>{{ $item->wilayah->parent->nama ?? $item->wilayah->nama }}</span></td>
+                <td style="line-height: 1.2;white-space: nowrap;"><span>{{ isset($item->wilayah->parent->nama) ? $item->wilayah->nama :'Anggaran provinsi' }}</span></td>
                 <td>{{ format_number($item->anggaran_2025) }}</td>
                 <td>{{ format_number($item->anggaran_2026) }}</td>
                 <td>{{ format_number($item->anggaran_2026 - $item->anggaran_2025) }}</td>

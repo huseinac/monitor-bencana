@@ -6,6 +6,7 @@
     </div>
     <div class="modal-body">
         <x-io-select name="provinsi_id" caption="Provinsi" placeholder="-Pilih Provinsi-" :options="$list_provinsi" :value="$anggaran_daerah->wilayah->parent->wilayah_id ?? ''" :viewtype="2" required />
+        <x-checkbox class="my-3 small" name="is_anggaran_provinsi" caption="Anggaran provinsi" value="1" />
         <x-io-select name="wilayah_id" caption="Kabupaten" placeholder="-Pilih Kabupaten-" :value="$anggaran_daerah->wilayah_id ?? ''" :viewtype="2" required />
         <x-io-input type="number" name="anggaran_2025" caption="Anggaran 2025" :value="$anggaran_daerah->anggaran_2025 ?? ''" :viewtype="2" required />
         <x-io-input type="number" name="anggaran_2026" caption="Anggaran 2026" :value="$anggaran_daerah->anggaran_2026 ?? ''" :viewtype="2" required />
@@ -45,4 +46,9 @@
         });
     })
     $provinsi_id.change();
+
+    $is_anggaran_provinsi = $('#is_anggaran_provinsi');
+    $is_anggaran_provinsi.change(() => {
+        $('#wilayah_id').closest('.form-group').toggleClass('d-none');
+    });
 </script>

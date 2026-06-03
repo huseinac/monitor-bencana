@@ -11,6 +11,7 @@ class AlokasiAnggaran extends Model
         'anggaran_daerah_id',
         'keterangan',
         'nominal',
+        'nama_realisasi'
     ];
 
     public function anggaran_daerah()

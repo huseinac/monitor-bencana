@@ -6,6 +6,7 @@
     </div>
     <div class="modal-body">
         <x-io-select name="anggaran_daerah_id" caption="Anggaran" :options="$list_anggaran_daerah" placeholder="-Pilih Anggaran-" :value="$alokasi_anggaran->anggaran_daerah_id ?? ''" :viewtype="2" required />
+        <x-io-input type="text" name="nama_realisasi" caption="Nama realisasi" :value="$alokasi_anggaran->nama_realisasi ?? ''" :viewtype="2" required />
         <x-io-input type="number" name="nominal" caption="Nominal" :value="$alokasi_anggaran->nominal ?? ''" :viewtype="2" required />
         <x-io-textarea name="keterangan" caption="Keterangan" :value="$alokasi_anggaran->keterangan ?? ''" :viewtype="2" required />
     </div>

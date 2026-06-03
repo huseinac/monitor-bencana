@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\SektorTerdampakExport;
 use App\Imports\SektorTerdampakImport;
+use App\Imports\UpdateLatLngImport;
 use App\Services\DocumentService;
 use App\Services\IndikatorService;
 use App\Services\PelaksanaService;
@@ -116,6 +117,28 @@ class SektorTerdampakController extends IoResourceController
 
         Storage::delete($filename_zip);
         Storage::deleteDirectory($temp_directory);
+
+        $list_error = session('list_error', []);
+        if (count($list_error) > 0) {
+            return redirect()->back()->with('error', $list_error);
+        }
+        return redirect()->back();
+    }
+
+    public function import_latlng(Request $request)
+    {
+        $kabupaten_id = $request->input('kabupaten_id') ?? '';
+        if ($kabupaten_id === '') return redirect()->back()->with('error', 'Pilih Kabupaten');
+
+        $wilayahService = new WilayahService();
+        $kabupaten = $wilayahService->find($kabupaten_id);
+
+        $indikatorService = new IndikatorService();
+        $list_indikator = $indikatorService->search();
+        $list_kecamatan = $wilayahService->search(['parent_kode' => $kabupaten->kode]);
+
+        session()->forget('list_error');
+        if ($file_excel !== '') Excel::import(new UpdateLatLngImport($kabupaten, $list_indikator, $list_kecamatan), $request->file('file_excel'));
 
         $list_error = session('list_error', []);
         if (count($list_error) > 0) {

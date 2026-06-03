@@ -41,11 +41,22 @@
     </div>
 @endpush
 
+@push('modals')
+    <div class="modal fade" id="modal_detail" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" id="modal_info_content">
+                <div id="tablePekerjaan"></div>
+            </div>
+        </div>
+    </div>
+@endpush
+
 @push('scripts')
     <script>
         let $form_search = $('#form_search'),
             $table = $('#table'),
             $modal_info = $('#modal_info'),
+            $modal_detail = $('#modal_detail'),
             $modal_info_content = $('#modal_info_content');
 
         let selected_page = 1, _token = '{{ csrf_token() }}', base_url = '{{ route('alokasi_anggaran.index') }}', params_url = '{{ $params ?? '' }}';
@@ -72,7 +83,12 @@
         }
 
         let info = (id = '') => {
+            console.log(base_url + '/' + (id === '' ? 'create' : (id + '/edit')) + '?' + params_url);
             $.get(base_url + '/' + (id === '' ? 'create' : (id + '/edit')) + '?' + params_url, (result) => display_modal_info(result)).fail((xhr) => display_modal_info(xhr.responseText));
+        }
+
+        let detail = (id = '') => {
+            $modal_detail.modal('toggle');
         }
 
         let confirm_delete = (id) => {
@@ -104,11 +120,15 @@
                     cache: false,
                     processData: false,
                     contentType: false,
-                    success: () => {
-                        if (id === '') showToast('Alokasi Anggaran berhasil ditambahkan', 'success');
-                        else showToast('Alokasi Anggaran berhasil diubah', 'success');
+                    success: (r) => {
+                        if (r == 'Gagal menambahkan alokasi, Nominal alokasi melebihin budget tersedia') {
+                            showToast(r, 'danger');
+                        } else {
+                            if (id === '') showToast('Alokasi Anggaran berhasil ditambahkan', 'success');
+                            else showToast('Alokasi Anggaran berhasil diubah', 'success');
 
-                        init()
+                            init()
+                        }
                     },
                 }).fail((xhr) => {
                     error_handle(xhr.responseText);

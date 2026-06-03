@@ -1,12 +1,10 @@
 // ─── VARS ────────────────────────────────────────────────────────────────────
 let polygonLayers = {};
-let activeLayer = '';
 let activeCat = '';
 let activeKode = '';
 let activeProvinsi = null, activeKabupaten = null, activeKecamatan = null;
 let total_atensi = 0, total_mendekati = 0, total_normal = 0;
 let markers = [], markersData = [];
-let popupTimeout;
 let listAnggaranDaerah = [];
 let listPaketPekerjaan = [];
 
@@ -110,7 +108,9 @@ function get_wilayah(kode = '', nama = '') {
 
     $('#list_item_wilayah').html('');
     $.get(BASE_URL + 'map/get_wilayah?kode=' + kode, (result) => {
-        total_atensi = 0; total_mendekati = 0; total_normal = 0;
+        total_atensi = 0;
+        total_mendekati = 0;
+        total_normal = 0;
         $.each(result, (i, val) => {
             display_polygon_wilayah(val, result.length);
         });
@@ -125,7 +125,11 @@ function display_polygon_wilayah(item, totalLayer) {
     $('#mendekati_count').text(total_mendekati);
     $('#normal_count').text(total_normal);
 
-    $('#list_item_wilayah').append(`<div class="leg-item" onclick="get_wilayah('${item.kode}', '${item.nama}')" style="cursor:pointer;"><div class="leg-dot" style="background:${item.warna}"></div>${item.nama}</div>`);
+    if (item.kode.split('.').length < 3) {
+        $('#list_item_wilayah').append(`<div class="leg-item" onclick="get_wilayah('${item.kode}', '${item.nama}')" style="cursor:pointer;"><div class="leg-dot" style="background:${item.warna}"></div>${item.nama}</div>`);
+    } else {
+        $('#list_item_wilayah').append(`<div class="leg-item" style="cursor:pointer;"><div class="leg-dot" style="background:${item.warna}"></div>${item.nama}</div>`);
+    }
 
     fetchGeo(BASE_URL + item.polygon)
         .then(function (data) {
@@ -222,7 +226,7 @@ function display_polygon_wilayah(item, totalLayer) {
 
             // Click event for the fill layer
             map.on('click', fillLayerId, function (e) {
-                if (item.kode.split('.').length <= 3) {
+                if (item.kode.split('.').length <= 2) {
                     get_wilayah(item.kode, item.nama);
                 } else {
                     Swal.fire({
@@ -271,7 +275,7 @@ function display_polygon_wilayah(item, totalLayer) {
                 Swal.close();
             }
         })
-        .catch(function (err) { console.error('GeoJSON error:', item.polygon, err); });
+        .catch(function (err) { Swal.close(); console.error('GeoJSON error:', item.polygon, err); });
 }
 
 function clear_all_polygon() {
@@ -309,7 +313,7 @@ function select_provinsi(alt) {
     let kode = $('#provinsi_' + alt).find('option:selected').val();
 
 
-    $('.provinsi_option').each(function() {
+    $('.provinsi_option').each(function () {
         $(this).find('option[data-id="' + id + '"]').prop('selected', true);
     });
 
@@ -329,8 +333,9 @@ function display_provinsi() {
 function display_kabupaten() {
     if (activeKabupaten !== null) {
         get_wilayah(activeKabupaten.kode, activeKabupaten.nama);
-        activeKecamatan = null
+        activeKecamatan = null;
         $('.kecamatan_name').html('');
+        get_anggaran(activeKabupaten.kode);
     }
 }
 
@@ -345,6 +350,7 @@ function get_indikator(kode) {
         showConfirmButton: false,
         didOpen: () => Swal.showLoading()
     });
+    console.log(BASE_URL + 'map/get_indikator?wilayah_kode=' + kode);
     $.get(BASE_URL + 'map/get_indikator?wilayah_kode=' + kode, (result) => {
         let list_indikator = result.list_indikator;
         let list_pelaksana = result.list_pelaksana;
@@ -354,7 +360,6 @@ function get_indikator(kode) {
         renderPelaksana(list_pelaksana, list_sektor_terdampak, list_masalah_kritis);
         if (activeCat === 'indikator' || activeCat === 'pelaksana') {
             drawMarkersBencana(list_sektor_terdampak);
-
             Swal.close();
         }
     });
@@ -392,10 +397,146 @@ function get_anggaran(kode) {
     });
 }
 
-
-
-
-
+//
+// // ─── Cache Layer (localStorage) ─────────────────────────────────────────────
+// const CACHE_PREFIX = 'map_cache::';
+// const CACHE_TTL_MS = 240 * 60 * 1000; // 240 minutes, adjust as needed
+//
+// function getCached(key) {
+//     try {
+//         const raw = localStorage.getItem(CACHE_PREFIX + key);
+//         if (!raw) return null;
+//
+//         const { data, expiredAt } = JSON.parse(raw);
+//         if (Date.now() > expiredAt) {
+//             localStorage.removeItem(CACHE_PREFIX + key);
+//             return null;
+//         }
+//         return data;
+//     } catch {
+//         return null;
+//     }
+// }
+//
+// function setCache(key, data) {
+//     try {
+//         const payload = {
+//             data,
+//             expiredAt: Date.now() + CACHE_TTL_MS
+//         };
+//         localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(payload));
+//     } catch (e) {
+//         // localStorage might be full, fail silently
+//         console.warn('Cache write failed:', e);
+//     }
+// }
+//
+// function clearCache() {
+//     Object.keys(localStorage)
+//         .filter(k => k.startsWith(CACHE_PREFIX))
+//         .forEach(k => localStorage.removeItem(k));
+// }
+//
+// function cacheKey(endpoint, kode) {
+//     return `${endpoint}::${kode}`;
+// }
+//
+// // ─── Functions ────────────────────────────────────────────────────────────────
+// function get_indikator(kode) {
+//     const key = cacheKey('indikator', kode);
+//     const cached = getCached(key);
+//
+//     if (cached) {
+//         _process_indikator(cached);
+//         return;
+//     }
+//
+//     Swal.fire({
+//         title: 'Loading',
+//         allowOutsideClick: false,
+//         showConfirmButton: false,
+//         didOpen: () => Swal.showLoading()
+//     });
+//
+//     $.get(BASE_URL + 'map/get_indikator?wilayah_kode=' + kode, (result) => {
+//         setCache(key, result);
+//         _process_indikator(result);
+//     });
+// }
+//
+// function _process_indikator(result) {
+//     let list_indikator = result.list_indikator;
+//     let list_pelaksana = result.list_pelaksana;
+//     let list_masalah_kritis = result.list_masalah_kritis;
+//     let list_sektor_terdampak = list_indikator.flatMap(item => item.list_sektor_terdampak);
+//
+//     renderIndicators(list_indikator, list_sektor_terdampak, list_masalah_kritis);
+//     renderPelaksana(list_pelaksana, list_sektor_terdampak, list_masalah_kritis);
+//
+//     if (activeCat === 'indikator' || activeCat === 'pelaksana') {
+//         drawMarkersBencana(list_sektor_terdampak);
+//         Swal.close();
+//     }
+// }
+//
+// function get_pekerjaan(kode) {
+//     const key = cacheKey('pekerjaan', kode);
+//     const cached = getCached(key);
+//
+//     if (cached) {
+//         _process_pekerjaan(cached);
+//         return;
+//     }
+//
+//     Swal.fire({
+//         title: 'Loading',
+//         allowOutsideClick: false,
+//         showConfirmButton: false,
+//         didOpen: () => Swal.showLoading()
+//     });
+//
+//     $.get(BASE_URL + 'map/get_pekerjaan?wilayah_kode=' + kode, (result) => {
+//         setCache(key, result);
+//         _process_pekerjaan(result);
+//     });
+// }
+//
+// function _process_pekerjaan(result) {
+//     let list_pelaksana = result;
+//     let list_pekerjaan = list_pelaksana.flatMap(item => item.list_pekerjaan);
+//
+//     listPaketPekerjaan = list_pekerjaan;
+//     renderPaketPekerjaan(list_pelaksana, list_pekerjaan);
+//
+//     if (activeCat === 'pekerjaan') {
+//         drawMarkersBencanaPekerjaan(list_pekerjaan);
+//         Swal.close();
+//     }
+// }
+//
+// function get_anggaran(kode) {
+//     const key = cacheKey('anggaran', kode);
+//     const cached = getCached(key);
+//
+//     if (cached) {
+//         _process_anggaran(cached);
+//         return;
+//     }
+//
+//     $.get(BASE_URL + 'map/get_anggaran?wilayah_kode=' + kode, (result) => {
+//         setCache(key, result);
+//         _process_anggaran(result);
+//     });
+// }
+//
+// function _process_anggaran(result) {
+//     listAnggaranDaerah = result;
+//
+//     if (activeCat === 'tkd') {
+//         clearMarkers();
+//         drawMarkersTkd(listAnggaranDaerah);
+//     }
+// }
 
 
 // ─── Markers ──────────────────────────────────────────────────────────────────
@@ -453,7 +594,13 @@ function drawMarkersBencana(list) {
         if (status === 'Mendekati') iconImage = item.indikator.icon2;
         if (status === 'Atensi') iconImage = item.indikator.icon3;
         let iconUrl = ASSET_PATH + iconImage;
-        addCustomMarker([parseFloat(item.latitude), parseFloat(item.longitude)], iconUrl, item, 'bencana');
+        // if (!item.latitude.toString().includes(',')) {
+        try {
+            addCustomMarker([parseFloat(item.latitude), parseFloat(item.longitude)], iconUrl, item, 'bencana');
+        } catch (e) {
+
+        }
+        // }
     });
 }
 
@@ -462,15 +609,21 @@ function drawMarkersBencanaPekerjaan(list) {
 
         let iconImage = item.indikator.icon3;
         var iconUrl = ASSET_PATH + iconImage;
-        addCustomMarker([parseFloat(item.latitude), parseFloat(item.longitude)], iconUrl, item, 'pekerjaan');
+        try {
+            addCustomMarker([parseFloat(item.latitude), parseFloat(item.longitude)], iconUrl, item, 'pekerjaan');
+        } catch (e) {
+
+        }
     });
 }
 
 function drawMarkersTkd(list) {
     list.forEach(function (item) {
-        var iconUrl = 'http://178.128.52.144:1062/images/icons/marker-money.png';
-        if (item.wilayah.kode.length === 5) {
-            addCustomMarker([parseFloat(item.wilayah.latitude), parseFloat(item.wilayah.longitude)], iconUrl, item, 'anggaran');
+        var iconUrl = 'https://geopas.satgasprr.go.id/images/icons/building.png';
+        try {
+            addCustomMarker([parseFloat(item.latitude), parseFloat(item.longitude)], iconUrl, item, 'anggaran');
+        } catch (e) {
+
         }
     });
 
@@ -488,24 +641,25 @@ function drawMarkersTkd(list) {
         </thead>
         <tbody></tbody>
     </table>
-`);
+    `);
 
     list.forEach((item, index) => {
         // Calculate total
         const tkd2026 = parseFloat(item.anggaran_2026) || 0;
         const penyesuaian = parseFloat(item.penyesuaian) || 0;
         const total = tkd2026 + penyesuaian;
+        var nomor = (item.is_provinsi == 1) ? '' : (index + 1);
 
         // Get the region name from the 'wilayah' relationship
         const namaDaerah = item.wilayah ? item.wilayah.nama : 'Tidak Diketahui';
 
         $('#list_item_tkd tbody').append(`
         <tr>
-            <td>${index + 1}</td>
-            <td>${namaDaerah}</td>
-            <td style="text-align: right; font-weight: bold;">Rp ${add_commas(tkd2026)}</td>
-            <td style="text-align: right; font-weight: bold;">Rp ${add_commas(penyesuaian)}</td>
-            <td style="text-align: right; font-weight: bold;">Rp ${add_commas(total)}</td>
+            <td>${nomor}</td>
+            <td class="`+((item.is_provinsi == 1) ? 'text-warning' : '')+`">${namaDaerah}</td>
+            <td class="`+((item.is_provinsi == 1) ? 'text-warning' : '')+`" style="text-align: right; font-weight: bold;">Rp ${add_commas(tkd2026)}</td>
+            <td class="`+((item.is_provinsi == 1) ? 'text-warning' : '')+`" style="text-align: right; font-weight: bold;">Rp ${add_commas(penyesuaian)}</td>
+            <td class="`+((item.is_provinsi == 1) ? 'text-warning' : '')+`" style="text-align: right; font-weight: bold;">Rp ${add_commas(total)}</td>
         </tr>
     `);
     });
@@ -589,16 +743,20 @@ function fetchGeo(url) {
             return cached;
         }
         // 3. Network fetch → persist in both layers
-        return fetch(url)
-            .then(function (res) {
-                if (!res.ok) throw new Error('GeoJSON fetch failed: ' + url);
-                return res.json();
-            })
-            .then(function (data) {
-                geoCache.set(url, data);
-                geoIDBSet(url, data);   // fire-and-forget, non-blocking
-                return data;
-            });
+        try {
+            return fetch(url)
+                .then(function (res) {
+                    if (!res.ok) throw new Error('GeoJSON fetch failed: ' + url);
+                    return res.json();
+                })
+                .then(function (data) {
+                    geoCache.set(url, data);
+                    geoIDBSet(url, data);   // fire-and-forget, non-blocking
+                    return data;
+                });
+        } catch (e) {
+            
+        }
     });
 }
 

@@ -20,7 +20,6 @@
             flex-direction: column;
         }
     </style>
-    <script src="{{ asset('js/jquery.min.js') }}"></script>
 </head>
 <body>
 
@@ -53,9 +52,9 @@
     @foreach($buttons as $button)
         <div id="cat_action_{{ $button['alt'] }}" class="cat-action" style="display:none;">
             <div style="display:flex;flex-direction:column;gap:12px">
-{{--                <div class="cat-btn2" data-action="search">--}}
-{{--                    <img width="30" height="30" src="{{ asset('images/icons/search_'. $button['alt'] .'.png') }}" alt="{{ $button['alt'] }}"/>--}}
-{{--                </div>--}}
+                {{--                <div class="cat-btn2" data-action="search">--}}
+                {{--                    <img width="30" height="30" src="{{ asset('images/icons/search_'. $button['alt'] .'.png') }}" alt="{{ $button['alt'] }}"/>--}}
+                {{--                </div>--}}
                 <div class="cat-btn2" data-action="open-data" onclick="open_panel('{{ $button['alt'] }}')">
                     <img width="30" height="30" src="{{ asset('images/icons/database_'. $button['alt'] .'.png') }}" alt="{{ $button['alt'] }}"/>
                 </div>
@@ -72,55 +71,12 @@
                 <div class="panel-close">✕</div>
             </div>
             <div class="panel-sub">{{ $panel['sub'] }}</div>
-            <script>
-                @if ($panel['id'] == 'tkd')
-                $(document).on("change", "#provinsi_{{ $panel['id'] }}", function (e) {
-                    // body...
-                    $provinsi_id = $("#provinsi_{{ $panel['id'] }}");
-                    $kabupaten_id = $(document).find("#kabupaten_{{ $panel['id'] }}");
-                    $kabupaten_id.html('<option value="">-Pilih Kabupaten-</option>');
-                    let parent_kode = $provinsi_id.find('option:selected').data('id');
 
-                    if (parent_kode !== '') {
-                        $.get(BASE_URL + 'map/get_wilayah?kode=' + parent_kode, function (r) {
-                            // body...
-                            $.each(r, function (index, value) {
-                                // body...
-                                $kabupaten_id.append('<option value="'+ value.kode +'">'+ value.nama +'</option>');
-                            });
-                        });
-
-                        select_provinsi('{{ $panel['id'] }}');
-                    }
-
-
-                    // $.each(list_kabupaten.filter(item => item.parent_kode.toString() === parent_kode.toString()), (i, val) => {
-                    //     $kabupaten_id.append('<option value="'+ val.kode +'" ' + (val.kode === selected_kode ? 'selected' : '') + '>'+ val.nama +'</option>');
-                    // });
-                });
-                $(document).on("change", "#kabupaten_{{ $panel['id'] }}", function (e) {
-                    // body...
-                    $kabupaten_id = $(document).find("#kabupaten_{{ $panel['id'] }}");
-                    let parent_kode = $kabupaten_id.find('option:selected').val();
-
-                    if (parent_kode !== '') {
-                        get_anggaran(parent_kode);
-                    }
-                    // display_kabupaten();
-                });
-                @endif
-            </script>
             <div class="header-wilayah">
                 <div class="breadcrumb-row">
-                    <div class="breadcrumb-cell" style="cursor: pointer;">Prop : <select id="provinsi_{{ $panel['id'] }}" class="provinsi_option" style="border: 0;background: transparent;"><option data-id=""></option><option data-id="11" value="Aceh">Aceh</option><option data-id="12" value="Sumatera Utara">Sumatera Utara</option><option data-id="13" value="Sumatera Barat">Sumatera Barat</option></select></div>
-                    <div class="breadcrumb-cell" style="cursor: pointer;"> <!--onclick="display_kabupaten()"-->
-                        Kab : 
-                        <select id="kabupaten_{{ $panel['id'] }}" class="provinsi_option" style="border: 0;background: transparent;" onchange="">
-                        </select>
-                    </div>
-                    @if ($panel['id'] !== 'tkd')
+                    <div class="breadcrumb-cell" style="cursor: pointer;">Prop : <select id="provinsi_{{ $panel['id'] }}" class="provinsi_option" style="border: 0;background: transparent;" onchange="select_provinsi('{{ $panel['id'] }}')"><option data-id=""></option><option data-id="11" value="Aceh">Aceh</option><option data-id="12" value="Sumatera Utara">Sumatera Utara</option><option data-id="13" value="Sumatera Barat">Sumatera Barat</option></select></div>
+                    <div class="breadcrumb-cell" style="cursor: pointer;" onclick="display_kabupaten()"><span class="fw-500 kabupaten_name"></span></div>
                     <div class="breadcrumb-cell" style="cursor: pointer;" onclick="display_kecamatan()">Kec : <span class="fw-500 kecamatan_name"></span></div>
-                    @endif
                 </div>
             </div>
 
@@ -166,28 +122,13 @@
 <script>
     const BASE_URL = "{{ url('/') }}/";
     const ASSET_PATH = "{{ asset('storage') }}/";
-    const buttonTkd = document.getElementById("provinsi_tkd");
-
-    buttonTkd.addEventListener('change', (e) => {
-        // body...
-        get_anggaran(buttonTkd.options[buttonTkd.selectedIndex].getAttribute('data-id'));
-    });
 </script>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<!-- <script src="{{ asset('js/jquery.min.js') }}"></script> -->
+<script src="{{ asset('js/jquery.min.js') }}"></script>
 <script src="{{ asset('js/sweetalert2.js') }}"></script>
 <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('js/io.js') }}"></script>
-<script src="{{ asset('js/templates/locationCard.js') }}"></script>
-<script src="{{ asset('js/templates/masalahKritisCard.js') }}"></script>
-<script src="{{ asset('js/templates/catSection.js') }}"></script>
-<script src="{{ asset('js/templates/paketPekerjaanSection.js') }}"></script>
-<script src="{{ asset('js/templates/markerPopup.js') }}"></script>
-<script src="{{ asset('js/panels/indicators.js') }}"></script>
-<script src="{{ asset('js/panels/pelaksana.js') }}"></script>
-<script src="{{ asset('js/panels/paketPekerjaan.js') }}"></script>
-<script src="{{ asset('js/map.js') }}"></script>
-<script src="{{ asset('js/main.js') }}"></script>
+<script src="{{ asset('js/new_map.js') }}"></script>
 </body>
 </html>

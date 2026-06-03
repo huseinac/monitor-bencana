@@ -18,7 +18,10 @@ class PaketPekerjaan extends Model
         'longitude',
         'kategori_paket_pekerjaan_id',
         'penyedia_id',
+        'tahun_perencanaan',
+        'tahun_usulan',
         'tahun_anggaran',
+        'tahun_pelaksanaan_pekerjaan',
         'nama_program',
         'nama_kegiatan',
         'nama_sub_kegiatan',
@@ -31,7 +34,9 @@ class PaketPekerjaan extends Model
         'tanggal_kontrak',
         'tanggal_selesai',
         'nilai_pagu',
-        'nilai_kontrak'
+        'nilai_kontrak',
+        'status_anggaran_id',
+        'status_pelaksanaan_id'
     ];
 
     public function indikator()
