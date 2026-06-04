@@ -365,7 +365,7 @@ function get_indikator(kode) {
     });
 }
 
-function get_pekerjaan(kode) {
+function get_pekerjaan(kode, tahun_anggaran = '', pelaksana_id = '', status_anggaran_id = '', status_pelaksanaan_id = '') {
     Swal.fire({
         title: 'Loading',
         allowOutsideClick: false,
@@ -373,7 +373,12 @@ function get_pekerjaan(kode) {
         didOpen: () => Swal.showLoading()
     });
 
-    $.get(BASE_URL + 'map/get_pekerjaan?wilayah_kode=' + kode, (result) => {
+    $.get(BASE_URL + 'map/get_pekerjaan?wilayah_kode=' + kode 
+        + '&tahun_anggaran=' + tahun_anggaran +
+        '&pelaksana_id=' + pelaksana_id +
+        '&status_anggaran_id=' + status_anggaran_id +
+        '&status_pelaksanaan_id=' + status_pelaksanaan_id, 
+    (result) => {
         let list_pelaksana = result;
         let list_pekerjaan = list_pelaksana.flatMap(item => item.list_pekerjaan);
 
@@ -397,6 +402,26 @@ function get_anggaran(kode) {
     });
 }
 
+function filterPekerjaan(panelId, selectedWilayahKode) {
+        // body...
+    let $panelContainer = $('#searchPanelBody_' + panelId);
+    
+    let tahun_anggaran     = $panelContainer.find('input[name=tahun_anggaran]').val();
+    let pelaksana_id       = $panelContainer.find('[name=pelaksana_id]').val();
+    let status_anggaran_id = $panelContainer.find('[name=status_anggaran_id]').val();
+    let status_pelak_id    = $panelContainer.find('[name=status_pelaksanaan_id]').val();
+
+    console.log('Filtering values parsed successfully:', {
+        panel: panelId,
+        tahun: tahun_anggaran,
+        pelaksana: pelaksana_id
+    });
+
+    // Trigger your background data mapping reload cleanly
+    if (typeof get_pekerjaan === "function") {
+        get_pekerjaan(selectedWilayahKode, tahun_anggaran, pelaksana_id, status_anggaran_id, status_pelak_id);
+    }
+}
 //
 // // ─── Cache Layer (localStorage) ─────────────────────────────────────────────
 // const CACHE_PREFIX = 'map_cache::';

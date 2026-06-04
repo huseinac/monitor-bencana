@@ -13,6 +13,9 @@ use App\Services\AnggaranDaerahService;
 use App\Services\MasalahKritisService;
 use App\Services\PaketPekerjaanService;
 use App\Services\SektorTerdampakService;
+use App\Services\PelaksanaService;
+use App\Services\StatusAnggaranService;
+use App\Services\StatusPelaksanaanService;
 use App\Services\WilayahService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -178,34 +181,67 @@ class HomeController extends Controller
 
     public function get_pekerjaan(Request $request)
     {
+        $paketPekerjaanService = new PaketPekerjaanService();
         $kode_wilayah = $request->input('wilayah_kode') ?? '';
+        $tahun_anggaran = $request->input('tahun_anggaran') ?? false;
+        $pelaksana_id = $request->input('pelaksana_id') ?? false;
+        $status_anggaran_id = $request->input('status_anggaran_id') ?? false;
+        $status_pelaksanaan_id = $request->input('status_pelaksanaan_id') ?? false;
         $cache_key = 'pekerjaan_' . ($kode_wilayah === '' ? 'root' : $kode_wilayah);
 
-        return Cache::remember($cache_key, now()->addDays(7), function () use ($kode_wilayah) {
-            $list_pelaksana = Pelaksana::orderBy('nama')->get();
-            $list_paket_pekerjaan = PaketPekerjaan::whereHas('wilayah', fn($wilayah) => $wilayah->where('kode', 'like', $kode_wilayah . '%'))
-                ->with(['indikator', 'pelaksana', 'kategori_paket_pekerjaan', 'penyedia', 'list_rincian_pekerjaan.list_realisasi_pekerjaan', 'wilayah.parent.parent'])
-//                ->where('latitude', '<>', '')
-//                ->where('longitude', '<>', '')
-//                ->whereNotNull('latitude')
-//                ->whereNotNull('longitude')
-                ->get();
+        $list_pelaksana = Pelaksana::orderBy('nama');
+        !$pelaksana_id ?: $list_pelaksana->where('id', $pelaksana_id);
+        $list_pelaksana = $list_pelaksana->get();
 
-            foreach ($list_paket_pekerjaan as $pekerjaan) {
-                $rincian = $pekerjaan->list_rincian_pekerjaan;
-                $pekerjaan->persentase = $rincian->isNotEmpty()
-                    ? round($rincian->avg(fn($r) => $r->list_realisasi_pekerjaan->max('realisasi')) * 100)
-                    : 0;
-            }
+        $list_paket_pekerjaan = PaketPekerjaan::whereHas('wilayah', fn($wilayah) => $wilayah->where('kode', 'like', $kode_wilayah . '%'))
+            ->with(['indikator', 'pelaksana', 'kategori_paket_pekerjaan', 'penyedia', 'list_rincian_pekerjaan.list_realisasi_pekerjaan', 'wilayah.parent.parent']);
 
-            foreach ($list_pelaksana as $pelaksana) {
-                $pekerjaan = $list_paket_pekerjaan->where('pelaksana_id', $pelaksana->id);
-                $pelaksana->list_pekerjaan = $pekerjaan->values();
-                $pelaksana->persentase = $pekerjaan->isNotEmpty() ? round($pekerjaan->avg('persentase')) : 100;
-            }
+        !$tahun_anggaran ?: $list_paket_pekerjaan->where('tahun_anggaran', $tahun_anggaran);
+        !$status_anggaran_id ?: $list_paket_pekerjaan->where('status_anggaran_id', $status_anggaran_id);
+        !$status_pelaksanaan_id ?: $list_paket_pekerjaan->where('status_pelaksanaan_id', $status_pelaksanaan_id);
 
-            return response()->json($list_pelaksana);
-        });
+        $list_paket_pekerjaan = $list_paket_pekerjaan->get();
+
+        foreach ($list_paket_pekerjaan as $pekerjaan) {
+            $rincian = $pekerjaan->list_rincian_pekerjaan;
+            $pekerjaan->persentase = $rincian->isNotEmpty()
+                ? round($rincian->avg(fn($r) => $r->list_realisasi_pekerjaan->max('realisasi')) * 100)
+                : 0;
+        }
+
+        foreach ($list_pelaksana as $pelaksana) {
+            $pekerjaan = $list_paket_pekerjaan->where('pelaksana_id', $pelaksana->id);
+            $pelaksana->list_pekerjaan = $pekerjaan->values();
+            $pelaksana->persentase = $pekerjaan->isNotEmpty() ? round($pekerjaan->avg('persentase')) : 100;
+        }
+
+        return response()->json($list_pelaksana);
+
+//         return Cache::remember($cache_key, now()->addDays(7), function () use ($kode_wilayah) {
+//             $list_pelaksana = Pelaksana::orderBy('nama')->get();
+//             $list_paket_pekerjaan = PaketPekerjaan::whereHas('wilayah', fn($wilayah) => $wilayah->where('kode', 'like', $kode_wilayah . '%'))
+//                 ->with(['indikator', 'pelaksana', 'kategori_paket_pekerjaan', 'penyedia', 'list_rincian_pekerjaan.list_realisasi_pekerjaan', 'wilayah.parent.parent'])
+// //                ->where('latitude', '<>', '')
+// //                ->where('longitude', '<>', '')
+// //                ->whereNotNull('latitude')
+// //                ->whereNotNull('longitude')
+//                 ->get();
+
+//             foreach ($list_paket_pekerjaan as $pekerjaan) {
+//                 $rincian = $pekerjaan->list_rincian_pekerjaan;
+//                 $pekerjaan->persentase = $rincian->isNotEmpty()
+//                     ? round($rincian->avg(fn($r) => $r->list_realisasi_pekerjaan->max('realisasi')) * 100)
+//                     : 0;
+//             }
+
+//             foreach ($list_pelaksana as $pelaksana) {
+//                 $pekerjaan = $list_paket_pekerjaan->where('pelaksana_id', $pelaksana->id);
+//                 $pelaksana->list_pekerjaan = $pekerjaan->values();
+//                 $pelaksana->persentase = $pekerjaan->isNotEmpty() ? round($pekerjaan->avg('persentase')) : 100;
+//             }
+
+//             return response()->json($list_pelaksana);
+//         });
     }
 
     public function get_anggaran(Request $request)
@@ -317,6 +353,15 @@ class HomeController extends Controller
 
     public function map()
     {
+        $pelaksanaService = new PelaksanaService();
+        view()->share('list_pelaksana', $pelaksanaService->dropdown());
+
+        $statusAnggaranService = new StatusAnggaranService();
+        view()->share('list_status_anggaran', $statusAnggaranService->dropdown());
+
+        $statusPelaksanaanService = new StatusPelaksanaanService();
+        view()->share('list_status_pelaksanaan', $statusPelaksanaanService->dropdown());
+
         $buttons = [
             ['icon' => 'images/icons/wilayah.png', 'alt' => 'wilayah', 'label' => 'Wilayah'],
             ['icon' => 'images/icons/indikator.png', 'alt' => 'indikator', 'label' => 'Update Kondisi<br>(indikator)'],

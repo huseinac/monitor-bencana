@@ -9,6 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <style>
         .maplibregl-ctrl-bottom-right {
@@ -73,13 +76,15 @@
             </div>
             <div class="panel-sub">{{ $panel['sub'] }}</div>
             <script>
-                @if ($panel['id'] == 'tkd')
+                var selectedWilayahKode = '';
+                @if ($panel['id'] == 'tkd' || $panel['id'] == 'pekerjaan')
                 $(document).on("change", "#provinsi_{{ $panel['id'] }}", function (e) {
                     // body...
                     $provinsi_id = $("#provinsi_{{ $panel['id'] }}");
                     $kabupaten_id = $(document).find("#kabupaten_{{ $panel['id'] }}");
                     $kabupaten_id.html('<option value="">-Pilih Kabupaten-</option>');
                     let parent_kode = $provinsi_id.find('option:selected').data('id');
+                    selectedWilayahKode = parent_kode;
 
                     if (parent_kode !== '') {
                         $.get(BASE_URL + 'map/get_wilayah?kode=' + parent_kode, function (r) {
@@ -93,6 +98,11 @@
                         select_provinsi('{{ $panel['id'] }}');
                     }
 
+                    @if ($panel['id'] == 'tkd')
+                    get_anggaran($provinsi_id.find('option:selected').data('id'));
+                    @elseif ($panel['id'] == 'pekerjaan')
+                    filterPekerjaan("{{$panel['id']}}", selectedWilayahKode);
+                    @endif
 
                     // $.each(list_kabupaten.filter(item => item.parent_kode.toString() === parent_kode.toString()), (i, val) => {
                     //     $kabupaten_id.append('<option value="'+ val.kode +'" ' + (val.kode === selected_kode ? 'selected' : '') + '>'+ val.nama +'</option>');
@@ -100,17 +110,23 @@
                 });
                 $(document).on("change", "#kabupaten_{{ $panel['id'] }}", function (e) {
                     // body...
+
                     $kabupaten_id = $(document).find("#kabupaten_{{ $panel['id'] }}");
                     let parent_kode = $kabupaten_id.find('option:selected').val();
+                    selectedWilayahKode = parent_kode;
 
                     if (parent_kode !== '') {
+                        @if ($panel['id'] == 'tkd')
                         get_anggaran(parent_kode);
+                        @elseif ($panel['id'] == 'pekerjaan')
+                        filterPekerjaan("{{$panel['id']}}", selectedWilayahKode);
+                        @endif
                     }
                     // display_kabupaten();
                 });
                 @endif
             </script>
-            <div class="header-wilayah">
+            <div class="header-wilayah w-100">
                 <div class="breadcrumb-row">
                     <div class="breadcrumb-cell" style="cursor: pointer;">Prop : <select id="provinsi_{{ $panel['id'] }}" class="provinsi_option" style="border: 0;background: transparent;"><option data-id=""></option><option data-id="11" value="Aceh">Aceh</option><option data-id="12" value="Sumatera Utara">Sumatera Utara</option><option data-id="13" value="Sumatera Barat">Sumatera Barat</option></select></div>
                     <div class="breadcrumb-cell" style="cursor: pointer;"> <!--onclick="display_kabupaten()"-->
@@ -122,6 +138,36 @@
                     <div class="breadcrumb-cell" style="cursor: pointer;" onclick="display_kecamatan()">Kec : <span class="fw-500 kecamatan_name"></span></div>
                     @endif
                 </div>
+                @csrf
+                @if ($panel['id'] == 'pekerjaan')
+                <div class="panel w-100 mt-3 bg-transparent">
+                    <div class="panel-header position-relative" 
+                         data-bs-toggle="collapse" 
+                         data-bs-target="#searchPanelBody_{{ $panel['id'] }}" 
+                         style="cursor: pointer; padding-right: 2.5rem;" 
+                         role="button">
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h5><i class="bi bi-search"></i> Pencarian data</h5>
+                            </div>
+                        </div>
+
+                        <i class="bi bi-chevron-down text-muted position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                    </div>
+                    
+                    <div class="panel-body row collapse hide" id="searchPanelBody_{{ $panel['id'] }}">
+                        <div class="col-lg-12 mb-2">
+                            <div>
+                                <x-input type="number" onkeypress="return event.charCode >= 48 && event.charCode <= 57" oninput="if (this.value.length > 4) this.value = this.value.slice(0, 4);" name="tahun_anggaran" class="form-control-sm" caption="Cari tahun" />
+                            </div>
+                        </div>
+                        <x-io-select name="pelaksana_id" caption="Pelaksana" :options="$list_pelaksana" placeholder="-Pilih pelaksana-" :viewtype="2" />
+                        <x-io-select name="status_anggaran_id" caption="Status Anggaran" :options="$list_status_anggaran" placeholder="-Pilih status anggaran-" :viewtype="2" />
+                        <x-io-select name="status_pelaksanaan_id" caption="Status Pelaksanaan" :options="$list_status_pelaksanaan" placeholder="-Pilih status pelaksanaan-" :viewtype="2" />
+                    </div>
+                </div>
+                @endif
             </div>
 
             @if($panel['id'] === 'wilayah')
@@ -166,11 +212,20 @@
 <script>
     const BASE_URL = "{{ url('/') }}/";
     const ASSET_PATH = "{{ asset('storage') }}/";
-    const buttonTkd = document.getElementById("provinsi_tkd");
 
-    buttonTkd.addEventListener('change', (e) => {
-        // body...
-        get_anggaran(buttonTkd.options[buttonTkd.selectedIndex].getAttribute('data-id'));
+    $(document).ready(function() {
+        
+        // 💡 2. Dynamic event listener catching inputs/selects inside the panel blocks
+        $(document).on('change input', '[id^="searchPanelBody_"] input, [id^="searchPanelBody_"] select', function() {
+            // Find the closest parent panel container and extract its unique ID suffix
+            let $container = $(this).closest('[id^="searchPanelBody_"]');
+            let containerId = $container.attr('id'); // e.g., "searchPanelBody_pekerjaan"
+            let panelId = containerId.replace('searchPanelBody_', ''); // Extracts: "pekerjaan"
+            
+            // Trigger your parsing filter
+            alert(selectedWilayahKode);
+            filterPekerjaan(panelId, selectedWilayahKode);
+        });
     });
 </script>
 
