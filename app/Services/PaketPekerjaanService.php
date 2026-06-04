@@ -10,11 +10,21 @@ class PaketPekerjaanService extends IoService
     {
         $this->model = new PaketPekerjaan();
         $this->sort_by = ['id' => 'asc'];
-        $this->filters = ['indikator_id', 'wilayah_id', 'pelaksana_id'];
+        $this->filters = [
+            'indikator_id', 
+            'wilayah_id', 
+            'pelaksana_id', 
+            'tahun_anggaran',
+            'status_anggaran_id',
+            'status_pelaksanaan_id',
+        ];
     }
 
     public function dynamic_search($model, $params = [])
     {
+        $nama = $params['nama'] ?? '';
+        if ($nama !== '') $model = $model->where('nama', 'like', '%' . $nama . '%');
+
         $keterangan = $params['keterangan'] ?? '';
         if ($keterangan !== '') $model = $model->where('keterangan', 'like', '%' . $keterangan . '%');
 

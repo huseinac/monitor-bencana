@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Number;
 use App\Models\AnggaranDaerah;
+use App\Models\Wilayah;
+
+use Illuminate\Support\Facades\DB;
 
 class AnggaranDaerahService extends IoService
 {
@@ -28,7 +32,11 @@ class AnggaranDaerahService extends IoService
     {
         $params['with'] = ['wilayah'];
         $result = [];
-        foreach ($this->search($params) as $value) $result[$value->id] = $value->wilayah->nama . ' - ' . $value->wilayah->parent->nama;
+        // foreach ($this->search($params) as $value) $result[$value->id] = $value->wilayah->nama . ' - ' . $value->wilayah->parent->nama;
+        foreach ($this->search($params) as $value) $result[$value->id] = $value->wilayah->nama . ' - ' .
+            (is_null($value->wilayah->parent) ? $value->wilayah->nama : $value->wilayah->parent->nama) . ' - ' .
+            'Rp '. Number::format(($value->anggaran_2026 + $value->penyesuaian), locale: 'id')
+        ;
         return $result;
     }
 
@@ -37,4 +45,20 @@ class AnggaranDaerahService extends IoService
         return $this->cleanNumber($params, ['anggaran_2025', 'anggaran_2026', 'penyesuaian']);
     }
 
+    public function store($params)
+    {
+        $params = $this->filter_params($params);
+        
+        //cek apakah anggaran provinsi
+        $isAnggaranProvinsi = $params['is_anggaran_provinsi'] ?? false;
+        if ($isAnggaranProvinsi) {
+            // code...
+            $wilayah = new Wilayah();
+            $x = $wilayah->where('kode', $params['provinsi_id'])->first();
+            $params['wilayah_id'] = $x->id;
+            $params['provinsi_id'] = $x->id;
+        }
+
+        return $this->model->create($params);
+    }
 }

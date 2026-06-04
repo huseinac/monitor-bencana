@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AnggaranDaerah;
 use App\Models\AlokasiAnggaran;
 
 class AlokasiAnggaranService extends IoService
@@ -26,4 +27,19 @@ class AlokasiAnggaranService extends IoService
         return $this->cleanNumber($params, ['nominal']);
     }
 
+    public function store($params)
+    {
+        $anggaranDaerah = new AnggaranDaerah();
+        $data = $params;
+
+        $usedBudget = $this->model->where('anggaran_daerah_id', $data['anggaran_daerah_id'])->sum('nominal');
+        $availableBudget = $anggaranDaerah->selectRaw('(anggaran_2026 + penyesuaian) as availableBudget')->where('ID', $data['anggaran_daerah_id'])->get()->first()->availableBudget;
+        
+        if (($availableBudget - $usedBudget) - $data['nominal']) {
+            // code...
+            return 'Gagal menambahkan alokasi, Nominal alokasi melebihin budget tersedia';
+        } else {
+            return $this->service->store($request->all());
+        }
+    }
 }

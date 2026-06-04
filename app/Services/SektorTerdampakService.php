@@ -11,7 +11,7 @@ class SektorTerdampakService extends IoService
     {
         $this->model = new SektorTerdampak();
         $this->sort_by = ['id' => 'asc'];
-        $this->filters = ['indikator_id', 'wilayah_id', 'pelaksana_id'];
+        $this->filters = ['indikator_id', 'wilayah_id', 'pelaksana_id', 'kondisi'];
     }
 
     public function dynamic_search($model, $params = [])
