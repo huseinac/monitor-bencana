@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NewHomeController;
 use Illuminate\Support\Facades\Route;
 
 ini_set('memory_limit', '4024M');
@@ -7,10 +8,15 @@ ini_set('memory_limit', '4024M');
 Route::get('/', [App\Http\Controllers\HomeController::class, 'map'])->name('/');
 Route::get('hapus_cache/{kode?}', [App\Http\Controllers\HomeController::class, 'hapus_cache'])->name('hapus_cache');
 Route::get('map/get_wilayah', [App\Http\Controllers\HomeController::class, 'get_wilayah'])->name('map.get_wilayah');
+Route::get('map/get_wilayah_all', [App\Http\Controllers\HomeController::class, 'get_wilayah_all'])->name('map.get_wilayah_all');
 Route::get('map/get_indikator', [App\Http\Controllers\HomeController::class, 'get_indikator'])->name('map.get_indikator');
 Route::get('map/get_pekerjaan', [App\Http\Controllers\HomeController::class, 'get_pekerjaan'])->name('map.get_pekerjaan');
 Route::get('map/get_anggaran', [App\Http\Controllers\HomeController::class, 'get_anggaran'])->name('map.get_anggaran');
 Route::get('map/detail_pekerjaan/{id}', [App\Http\Controllers\HomeController::class, 'detail_pekerjaan'])->name('map.detail_pekerjaan');
+
+Route::get('new_map', [NewHomeController::class, 'index'])->name('new_map');
+
+Route::get('download_asset', [App\Http\Controllers\HomeController::class, 'download_asset'])->name('map.download_asset');
 
 Route::get('login/{role?}', [App\Http\Controllers\AuthController::class, 'login'])->name('login');
 Route::post('login', [App\Http\Controllers\AuthController::class, 'login_process'])->name('login.process');
@@ -31,7 +37,9 @@ Route::middleware(['io', 'auth'])->group(function () {
     ioRouteResource('kategori_paket_pekerjaan', App\Http\Controllers\KategoriPaketPekerjaanController::class);
     ioRouteResource('penyedia', App\Http\Controllers\PenyediaController::class);
 
+    Route::post('paket_pekerjaan/import_data', [App\Http\Controllers\PaketPekerjaanController::class, 'import_data'])->name('paket_pekerjaan.import_data');
     Route::post('sektor_terdampak/import_data', [App\Http\Controllers\SektorTerdampakController::class, 'import_data'])->name('sektor_terdampak.import_data');
+    Route::post('sektor_terdampak/import_latlng', [App\Http\Controllers\SektorTerdampakController::class, 'import_latlng'])->name('sektor_terdampak.import_latlng');
     Route::get('sektor_terdampak/export/data', [App\Http\Controllers\SektorTerdampakController::class, 'export_data'])->name('sektor_terdampak.export_data');
 
     Route::prefix('paket_pekerjaan/{paket_pekerjaan}/rincian_pekerjaan')->name('paket_pekerjaan.rincian_pekerjaan.')->group(function () {
